@@ -1,8 +1,11 @@
 ---
 // Biểu đồ đóng góp kiểu GitHub: 7 hàng (CN → T7), mỗi cột là một tuần, cột cuối là tuần hiện tại.
-// Các ô đậm nhất "viết" chữ BLUEBYTE VN; xung quanh là commit lác đác như hoạt động thật.
-// Animation: các ngày lần lượt có commit từ trái sang phải, đầu bút vẽ chữ cùng nhịp.
-// Toàn bộ tính khi build — chỉ dùng CSS animation, không có JS phía client.
+// Các ô đậm nhất "viết" chữ BLUEBYTE VN trên nền commit dày đặc — team làm việc mỗi ngày.
+//
+// Animation "khó đoán": ô chữ ban đầu chỉ nhạt như mọi ngày khác (ngụy trang), sau đó chuyển
+// sang đậm theo thứ tự ngẫu nhiên, chậm lúc đầu và nhanh dần — càng về cuối chữ mới càng rõ.
+// Trong giai đoạn đầu, vài ô nền cũng loé đậm rồi tắt để đánh lạc hướng.
+// Toàn bộ thời gian được tính khi build — chỉ dùng CSS animation, không có JS phía client.
 import type { Locale } from '@/i18n/config';
 import { useTranslations } from '@/i18n/utils';
 
@@ -28,38 +31,46 @@ const LETTER_GAP = 1;
 const PAD_COLS = 1;
 
 // Nhịp animation (ms).
-const INTRO_MS = 300;
-const DAY_SWEEP_MS = 34; // mỗi tuần (cột) trôi qua sau bấy nhiêu ms
-const STEP_MS = 15; // khoảng cách giữa hai điểm của đầu bút
-const PEN_LIFT_MS = 80; // nghỉ giữa hai chữ
+const COMMIT_START = 300; // các commit nền bắt đầu hiện
+const COMMIT_SPREAD = 1100; // ...rải ngẫu nhiên trong khoảng này
+const REVEAL_START = 1500; // chữ bắt đầu lộ ra
+const REVEAL_DURATION = 3000; // thời gian để toàn bộ chữ lộ ra
+const REVEAL_EASE = 0.6; // < 1: chậm lúc đầu, nhanh dần về cuối
+const DECOY_RATIO = 0.12; // tỉ lệ ô nền loé đậm để đánh lạc hướng
+const DECOY_WINDOW = 0.55; // ô đánh lạc hướng chỉ xuất hiện trong 55% đầu của giai đoạn lộ chữ
 const SPARKLE_EVERY = 13;
+const REVEAL_END = REVEAL_START + REVEAL_DURATION + 500;
+
+// Nhiễu giả ngẫu nhiên nhưng cố định giữa các lần build.
+const hash = (a: number, b: number) => Math.abs(Math.sin(a * 12.9898 + b * 78.233) * 43758.5453) % 1;
 
 // ---- Bố cục chữ ----
 const textWidth = [...TEXT].reduce((w, ch) => w + GLYPHS[ch][0].length, 0) + (TEXT.length - 1) * LETTER_GAP;
 const COLUMNS = textWidth + PAD_COLS * 2;
 
-const pen = new Map<string, { draw: number; sparkle: number | null }>();
-let time = INTRO_MS;
+const letterKeys: string[] = [];
 let x = PAD_COLS;
 for (const ch of TEXT) {
   const glyph = GLYPHS[ch];
-  const width = glyph[0].length;
-  for (let c = 0; c < width; c++) {
-    const rows = [...Array(glyph.length).keys()];
-    // Đi từng cột, đổi chiều lên/xuống xen kẽ như đầu bút.
-    for (const r of c % 2 === 0 ? rows : rows.reverse()) {
-      if (glyph[r][c] !== '1') continue;
-      pen.set(`${x + c},${GLYPH_TOP + r}`, { draw: time, sparkle: null });
-      time += STEP_MS;
-    }
-  }
-  if (ch !== ' ') time += PEN_LIFT_MS;
-  x += width + LETTER_GAP;
+  glyph.forEach((line, r) =>
+    [...line].forEach((bit, c) => bit === '1' && letterKeys.push(`${x + c},${GLYPH_TOP + r}`)),
+  );
+  x += glyph[0].length + LETTER_GAP;
 }
-const DRAW_END = time + 500;
-[...pen.values()].forEach((v, i) => {
-  if (i % SPARKLE_EVERY === 6) v.sparkle = DRAW_END + ((i * 977) % 7000);
-});
+
+// Thứ tự lộ chữ: xáo trộn ngẫu nhiên, thời điểm theo đường cong chậm → nhanh.
+const shuffled = letterKeys
+  .map((key) => {
+    const [cx, cy] = key.split(',').map(Number);
+    return { key, order: hash(cx * 7.1, cy * 3.3) };
+  })
+  .sort((a, b) => a.order - b.order);
+const revealAt = new Map(
+  shuffled.map(({ key }, i) => [
+    key,
+    Math.round(REVEAL_START + REVEAL_DURATION * ((i + 1) / shuffled.length) ** REVEAL_EASE),
+  ]),
+);
 
 // ---- Lịch: cột cuối chứa hôm nay ----
 const DAY_MS = 86_400_000;
@@ -78,41 +89,52 @@ for (let col = 0; col < COLUMNS; col++) {
 }
 if (months.length > 1 && months[1].col - months[0].col < 3) months.shift();
 
-// ---- Ô ----
-const hash = (a: number, b: number) => Math.abs(Math.sin(a * 12.9898 + b * 78.233) * 43758.5453) % 1;
-const insideText = (col: number, row: number) =>
-  col >= PAD_COLS && col < PAD_COLS + textWidth && row >= GLYPH_TOP && row < GLYPH_TOP + 5;
-
+// Nền dày đặc commit để thể hiện team làm việc liên tục: ngày thường gần như kín,
+// cuối tuần thưa hơn một chút. Nền tối đa mức 2 để chữ (mức 4) luôn nổi rõ.
 function noiseLevel(col: number, row: number): number {
   const n = hash(col, row);
   const weekend = row === 0 || row === DAYS - 1;
-  // Trong vùng chữ chỉ để lác đác vài ô nhạt nhất, để chữ đọc rõ.
-  if (insideText(col, row)) return n > 0.9 ? 1 : 0;
-  return n > 0.93 ? 2 : n > (weekend ? 0.8 : 0.62) ? 1 : 0;
+  if (weekend) return n > 0.9 ? 2 : n > 0.3 ? 1 : 0;
+  return n > 0.84 ? 2 : n > 0.08 ? 1 : 0;
 }
 
+// ---- Ô ----
 const cells: { cls: string; style: string }[] = [];
+let letterIndex = 0;
 for (let col = 0; col < COLUMNS; col++) {
   for (let row = 0; row < DAYS; row++) {
     const future = col === COLUMNS - 1 && row > todayRow;
     const isToday = col === COLUMNS - 1 && row === todayRow;
-    const letter = pen.get(`${col},${row}`);
-    const day = INTRO_MS + col * DAY_SWEEP_MS + Math.round(hash(row, col) * 160);
+    const reveal = revealAt.get(`${col},${row}`);
+    const commit = COMMIT_START + Math.round(hash(row * 5.3, col * 1.7) * COMMIT_SPREAD);
 
     if (future) {
       cells.push({ cls: 'cell future', style: '' });
-    } else if (letter) {
-      const level = hash(col * 3, row) > 0.86 ? 3 : 4;
-      const spark = letter.sparkle === null ? '' : `;--spark:${letter.sparkle}ms`;
-      cells.push({
-        cls: `cell g${level} pen${letter.sparkle === null ? '' : ' sparkle'}`,
-        style: `--draw:${letter.draw}ms${spark}`,
-      });
-    } else {
-      const level = isToday ? 2 : noiseLevel(col, row);
-      const cls = `cell g${level}${level > 0 ? ' commit' : ''}${isToday ? ' today' : ''}`;
-      cells.push({ cls, style: level > 0 ? `--day:${day}ms;--end:${DRAW_END}ms` : '' });
+      continue;
     }
+
+    if (reveal !== undefined) {
+      const level = hash(col * 3, row) > 0.94 ? 3 : 4;
+      const sparkle = letterIndex++ % SPARKLE_EVERY === 6;
+      const spark = sparkle ? `;--spark:${REVEAL_END + Math.round(hash(col, row * 9) * 7000)}ms` : '';
+      cells.push({
+        cls: `cell g${level} letter${sparkle ? ' sparkle' : ''}`,
+        style: `--day:${commit}ms;--reveal:${reveal}ms${spark}`,
+      });
+      continue;
+    }
+
+    const level = isToday ? 2 : noiseLevel(col, row);
+    if (level === 0) {
+      cells.push({ cls: 'cell g0', style: '' });
+      continue;
+    }
+    const decoy = !isToday && hash(col * 2.9, row * 4.1) < DECOY_RATIO;
+    const decoyAt = REVEAL_START + Math.round(hash(col, row * 2) * REVEAL_DURATION * DECOY_WINDOW);
+    cells.push({
+      cls: `cell g${level} commit${decoy ? ' decoy' : ''}${isToday ? ' today' : ''}`,
+      style: `--day:${commit}ms;--end:${REVEAL_END}ms${decoy ? `;--decoy:${decoyAt}ms` : ''}`,
+    });
   }
 }
 ---
@@ -203,15 +225,25 @@ for (let col = 0; col < COLUMNS; col++) {
   .g3 { background: var(--g3); }
   .g4 { background: var(--g4); }
 
-  /* Ngày có commit: chuyển từ ô trống sang màu của nó khi "thời gian" trôi tới. */
+  /*
+   * Màu cuối cùng luôn là màu của class gN, nên khi tắt animation (reduced motion)
+   * vẫn thấy đúng chữ. Thứ tự trong danh sách animation quan trọng: animation sau ghi đè animation trước.
+   */
   .commit { animation: commit 0.5s ease-out backwards; animation-delay: var(--day); }
-  /* Đầu bút: ô trống → xanh sáng, phóng nhẹ → xanh đậm. */
-  .pen { animation: pen 0.55s ease-out backwards; animation-delay: var(--draw); }
-  .sparkle {
-    animation: pen 0.55s ease-out backwards, sparkle 8s ease-in-out infinite;
-    animation-delay: var(--draw), var(--spark);
+  .decoy {
+    animation: commit 0.5s ease-out backwards, decoy 0.9s ease-in-out;
+    animation-delay: var(--day), var(--decoy);
   }
-  /* Ô hôm nay: vòng sáng nhẹ sau khi vẽ xong. */
+  /* Ô chữ: trống → nhạt như mọi ngày (ngụy trang) → bật đậm tại --reveal. */
+  .letter {
+    animation: masked var(--reveal) linear, commit 0.5s ease-out backwards, reveal 0.5s ease-out;
+    animation-delay: 0ms, var(--day), var(--reveal);
+  }
+  .sparkle {
+    animation: masked var(--reveal) linear, commit 0.5s ease-out backwards, reveal 0.5s ease-out,
+      sparkle 8s ease-in-out infinite;
+    animation-delay: 0ms, var(--day), var(--reveal), var(--spark);
+  }
   .today {
     animation: commit 0.5s ease-out backwards, today 2.4s ease-in-out infinite;
     animation-delay: var(--day), var(--end);
@@ -219,11 +251,13 @@ for (let col = 0; col < COLUMNS; col++) {
 
   @keyframes fade { from { opacity: 0; transform: translateY(8px); } }
   @keyframes commit { from { background: var(--g0); } }
-  @keyframes pen {
-    0% { background: var(--g0); transform: scale(1); }
-    30% { background: var(--g1); transform: scale(1.25); box-shadow: 0 0 8px rgb(0 113 227 / 0.6); }
-    60% { background: var(--g2); }
+  @keyframes masked { from, to { background: var(--g1); } }
+  @keyframes reveal {
+    0% { background: var(--g2); transform: scale(1.35); box-shadow: 0 0 8px rgb(0 113 227 / 0.6); }
     100% { transform: scale(1); box-shadow: none; }
+  }
+  @keyframes decoy {
+    25%, 65% { background: var(--g4); }
   }
   @keyframes sparkle {
     0%, 90%, 100% { filter: none; }

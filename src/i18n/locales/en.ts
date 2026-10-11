@@ -23,7 +23,7 @@ const en: typeof vi = {
     days: ['Mon', 'Wed', 'Fri'],
     less: 'Less',
     more: 'More',
-    caption: 'Every square is a day of building.',
+    caption: 'Every day is a building day.',
   },
   approach: {
     title: 'Our approach',

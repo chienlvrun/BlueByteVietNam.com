@@ -22,7 +22,7 @@ const vi = {
     days: ['T2', 'T4', 'T6'],
     less: 'Ít hơn',
     more: 'Nhiều hơn',
-    caption: 'Mỗi ô là một ngày chúng tôi xây dựng.',
+    caption: 'Ngày nào cũng là ngày xây dựng.',
   },
   approach: {
     title: 'Cách chúng tôi làm',

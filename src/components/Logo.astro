@@ -1,14 +1,15 @@
 ---
+import { logoCells, LOGO_CELL, LOGO_RADIUS, LOGO_SIZE } from '@/data/brand';
+
 interface Props { href: string; size?: number }
-const { href, size = 20 } = Astro.props;
+const { href, size = 22 } = Astro.props;
 ---
 
 <a href={href} class="logo" aria-label="BlueByte Vietnam">
-  <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-    <rect x="0" y="0" width="9" height="9" rx="2.2" fill="currentColor" />
-    <rect x="11" y="0" width="9" height="9" rx="2.2" fill="currentColor" opacity="0.35" />
-    <rect x="0" y="11" width="9" height="9" rx="2.2" fill="currentColor" opacity="0.35" />
-    <rect x="11" y="11" width="9" height="9" rx="2.2" fill="var(--c-blue)" />
+  <svg width={size} height={size} viewBox={`0 0 ${LOGO_SIZE} ${LOGO_SIZE}`} aria-hidden="true">
+    {logoCells.map((c) => (
+      <rect x={c.x} y={c.y} width={LOGO_CELL} height={LOGO_CELL} rx={LOGO_RADIUS} fill={c.fill} />
+    ))}
   </svg>
   <span>BlueByte</span>
 </a>
