@@ -1,0 +1,30 @@
+---
+import type { Locale } from '@/i18n/config';
+import { useTranslations } from '@/i18n/utils';
+import ContributionGraph from './ContributionGraph.astro';
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="hero">
+  <div class="container copy">
+    <p class="eyebrow">{t.hero.eyebrow}</p>
+    <h1>{t.hero.title}</h1>
+    <p class="lead">{t.hero.text}</p>
+    <div class="cta-row">
+      <a class="button button-elevated" href="#products">{t.hero.primary}</a>
+      <a class="button button-elevated button-secondary" href="#contact">{t.hero.secondary}</a>
+    </div>
+  </div>
+  <ContributionGraph lang={lang} />
+</section>
+
+<style>
+  .hero { padding-top: clamp(72px, 8vw, 120px); padding-bottom: clamp(40px, 6vw, 80px); text-align: center; overflow: hidden; }
+  .copy { animation: rise 1s var(--ease) both; }
+  h1 { font-size: clamp(2.75rem, 1.2rem + 5.5vw, 5rem); margin-top: 12px; }
+  .lead { margin: 24px auto 32px; max-width: 32em; font-size: clamp(1.15rem, 1rem + 0.5vw, 1.5rem); line-height: 1.33; color: var(--c-muted); }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+</style>

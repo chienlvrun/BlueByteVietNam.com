@@ -1,0 +1,113 @@
+/* Biến giao diện (phong cách Apple) — đổi màu, font, kích thước tại đây. */
+:root {
+  --c-bg: #ffffff;
+  --c-bg-alt: #f5f5f7;
+  --c-dark: #000000;
+  --c-text: #1d1d1f;
+  --c-muted: #6e6e73;
+  --c-muted-dark: #a1a1a6;
+  --c-border: #d2d2d7;
+  --c-blue: #0071e3;
+  --c-blue-hover: #0077ed;
+  --c-link: #0066cc;
+  --c-link-dark: #2997ff;
+  --c-cell: #e8e8ed;
+
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --container: 980px;
+  --container-wide: 1200px;
+  --radius-tile: 28px;
+  --header-h: 44px;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--header-h); }
+body {
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+h1, h2, h3 { font-weight: 600; line-height: 1.07; letter-spacing: -0.028em; text-wrap: balance; }
+p { text-wrap: pretty; }
+:focus-visible { outline: 2px solid var(--c-blue); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+.container { width: min(100% - 44px, var(--container)); margin-inline: auto; }
+.container--wide { width: min(100% - 24px, var(--container-wide)); margin-inline: auto; }
+.section { padding-block: clamp(80px, 8vw + 40px, 140px); }
+.section--alt { background: var(--c-bg-alt); }
+.section--dark { background: var(--c-dark); color: #f5f5f7; }
+
+.headline { text-align: center; margin-bottom: clamp(40px, 5vw, 72px); }
+.headline h2 { font-size: clamp(2.25rem, 1.4rem + 3.2vw, 3.5rem); }
+.headline p { margin: 16px auto 0; max-width: 34em; font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem); color: var(--c-muted); }
+.section--dark .headline p { color: var(--c-muted-dark); }
+
+.eyebrow { font-size: clamp(1rem, 0.9rem + 0.3vw, 1.2rem); font-weight: 600; color: var(--c-muted); letter-spacing: -0.01em; }
+
+/* Nút & link — sao theo hệ thống nút của apple.com (sk-button), không có transition. */
+.button {
+  display: inline-block;
+  box-sizing: content-box;
+  min-width: 28px; /* 60px - 2 × 16px */
+  padding: 8px 15px; /* (9px, 16px) trừ viền 1px */
+  border: 1px solid transparent;
+  border-radius: 980px;
+  background: var(--c-blue);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.28577;
+  font-weight: 400;
+  letter-spacing: -0.016em;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.button:hover { background: #0076df; border-color: transparent; text-decoration: none; }
+.button:active { background: #006edb; outline: none; }
+.button:focus-visible { outline: 2px solid var(--c-blue); outline-offset: 3px; }
+
+.button-elevated {
+  min-width: 26px; /* 70px - 2 × 22px */
+  padding: 11px 21px; /* (12px, 22px) trừ viền 1px */
+  font-size: 17px;
+  line-height: 1.17648;
+  letter-spacing: -0.022em;
+}
+
+.button-secondary { background: transparent; color: var(--c-link); border-color: var(--c-link); }
+.button-secondary:hover { background: #0076df; color: #fff; border-color: transparent; }
+.button-secondary:active { background: #006edb; color: #fff; }
+.theme-dark .button-secondary { color: var(--c-link-dark); border-color: var(--c-link-dark); }
+.theme-dark .button-secondary:hover { background: #0076df; color: #fff; border-color: transparent; }
+
+/* Link có chevron: chỉ phần chữ được gạch chân khi hover, chevron cách chữ 0.24em. */
+.link { color: var(--c-link); }
+.theme-dark .link { color: var(--c-link-dark); }
+.link:hover .link-copy { text-decoration: underline; }
+.link::after {
+  content: '';
+  display: inline-block;
+  width: 0.36em;
+  height: 0.62em;
+  margin-inline-start: 0.24em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 12'%3E%3Cpath d='M1 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 12'%3E%3Cpath d='M1 1l5 5-5 5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.text-link { color: var(--c-link); }
+.text-link:hover { text-decoration: underline; }
+
+.cta-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 18px; }

@@ -1,0 +1,96 @@
+---
+import type { Locale } from '@/i18n/config';
+import { pick, useTranslations } from '@/i18n/utils';
+import { products } from '@/data/products';
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Ô 5x5 cho thẻ "Sản phẩm tiếp theo": một ô xanh đang "sáng lên".
+const NEXT_GRID = 25;
+const NEXT_LIT = 18;
+---
+
+<section id="products" class="section section--alt">
+  <div class="container">
+    <div class="headline">
+      <h2>{t.products.title}</h2>
+      <p>{t.products.text}</p>
+    </div>
+  </div>
+
+  <div class="container--wide tiles">
+    {products.map((p) => (
+      <article class="tile">
+        <div class="tile-copy">
+          <p class="status">{t.products.live}</p>
+          <h3>{p.name}</h3>
+          <p class="tagline">{pick(p.tagline, lang)}</p>
+          <p class="desc">{pick(p.description, lang)}</p>
+          <div class="cta-row">
+            <a class="button button-elevated" href={p.url} target="_blank" rel="noopener">{t.products.try}</a>
+            <a class="button button-elevated button-secondary" href={p.url} target="_blank" rel="noopener">{p.domain}</a>
+          </div>
+        </div>
+        <div class="visual transcript" aria-hidden="true">
+          {[72, 90, 55, 84, 40].map((w, i) => (
+            <span class:list={['line', { speaker: i === 0 || i === 3 }]} style={`--w:${w}%; --i:${i}`}></span>
+          ))}
+          <p class="meta">{pick(p.tags, lang).join(' · ')}</p>
+        </div>
+      </article>
+    ))}
+
+    <article class="tile tile--dark theme-dark">
+      <div class="tile-copy">
+        <p class="status">{t.products.next.badge}</p>
+        <h3>{t.products.next.title}</h3>
+        <p class="desc">{t.products.next.text}</p>
+        <div class="cta-row">
+          <a class="button button-elevated button-secondary" href="#contact">{t.products.next.cta}</a>
+        </div>
+      </div>
+      <div class="visual next" aria-hidden="true">
+        {Array.from({ length: NEXT_GRID }, (_, i) => <span class:list={{ lit: i === NEXT_LIT }}></span>)}
+      </div>
+    </article>
+  </div>
+</section>
+
+<style>
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 12px; }
+  .tile {
+    display: flex; flex-direction: column; justify-content: space-between; gap: 48px;
+    min-height: 580px;
+    padding: clamp(40px, 5vw, 56px) clamp(24px, 4vw, 48px) 0;
+    background: var(--c-bg);
+    border-radius: var(--radius-tile);
+    text-align: center;
+    overflow: hidden;
+  }
+  .status { font-size: 14px; font-weight: 600; color: #bf4800; }
+  h3 { font-size: clamp(2.25rem, 1.6rem + 2vw, 3rem); margin-top: 6px; }
+  .tagline { font-size: clamp(1.2rem, 1.05rem + 0.5vw, 1.5rem); margin-top: 8px; }
+  .desc { color: var(--c-muted); max-width: 30em; margin: 12px auto 24px; }
+
+  .visual { margin-inline: auto; width: min(100%, 400px); }
+  .transcript {
+    display: grid; gap: 14px;
+    padding: 32px 28px 40px;
+    background: var(--c-bg-alt);
+    border-radius: 20px 20px 0 0;
+  }
+  .line { display: block; height: 10px; width: var(--w); border-radius: 6px; background: var(--c-cell); animation: type 1.2s var(--ease) both; animation-delay: calc(var(--i) * 0.15s); transform-origin: left; }
+  .line.speaker { width: 22%; height: 8px; background: var(--c-blue); opacity: 0.85; }
+  @keyframes type { from { transform: scaleX(0); } }
+  .meta { font-size: 12px; color: var(--c-muted); text-align: left; margin-top: 6px; }
+
+  .tile--dark { background: var(--c-dark); color: #f5f5f7; }
+  .tile--dark .status { color: var(--c-muted-dark); }
+  .tile--dark .desc { color: var(--c-muted-dark); }
+  .next { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: min(100%, 260px); padding-bottom: 56px; }
+  .next span { aspect-ratio: 1; border-radius: 22%; background: #1d1d1f; }
+  .next .lit { background: var(--c-blue); box-shadow: 0 0 40px rgb(0 113 227 / 0.6); animation: glow 2.4s ease-in-out infinite; }
+  @keyframes glow { 50% { opacity: 0.45; box-shadow: none; } }
+</style>

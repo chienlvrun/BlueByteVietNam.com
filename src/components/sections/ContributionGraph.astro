@@ -1,0 +1,253 @@
+---
+// Biểu đồ đóng góp kiểu GitHub: 7 hàng (CN → T7), mỗi cột là một tuần, cột cuối là tuần hiện tại.
+// Các ô đậm nhất "viết" chữ BLUEBYTE VN; xung quanh là commit lác đác như hoạt động thật.
+// Animation: các ngày lần lượt có commit từ trái sang phải, đầu bút vẽ chữ cùng nhịp.
+// Toàn bộ tính khi build — chỉ dùng CSS animation, không có JS phía client.
+import type { Locale } from '@/i18n/config';
+import { useTranslations } from '@/i18n/utils';
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const GLYPHS: Record<string, string[]> = {
+  B: ['111.', '1..1', '111.', '1..1', '111.'],
+  L: ['1...', '1...', '1...', '1...', '1111'],
+  U: ['1..1', '1..1', '1..1', '1..1', '.11.'],
+  E: ['1111', '1...', '111.', '1...', '1111'],
+  Y: ['1...1', '.1.1.', '..1..', '..1..', '..1..'],
+  T: ['11111', '..1..', '..1..', '..1..', '..1..'],
+  V: ['1...1', '1...1', '1...1', '.1.1.', '..1..'],
+  N: ['1...1', '11..1', '1.1.1', '1..11', '1...1'],
+  ' ': ['.', '.', '.', '.', '.'],
+};
+const TEXT = 'BLUEBYTE VN';
+const DAYS = 7;
+const GLYPH_TOP = 1; // hàng T2 → T6 chứa chữ
+const LETTER_GAP = 1;
+const PAD_COLS = 1;
+
+// Nhịp animation (ms).
+const INTRO_MS = 300;
+const DAY_SWEEP_MS = 34; // mỗi tuần (cột) trôi qua sau bấy nhiêu ms
+const STEP_MS = 15; // khoảng cách giữa hai điểm của đầu bút
+const PEN_LIFT_MS = 80; // nghỉ giữa hai chữ
+const SPARKLE_EVERY = 13;
+
+// ---- Bố cục chữ ----
+const textWidth = [...TEXT].reduce((w, ch) => w + GLYPHS[ch][0].length, 0) + (TEXT.length - 1) * LETTER_GAP;
+const COLUMNS = textWidth + PAD_COLS * 2;
+
+const pen = new Map<string, { draw: number; sparkle: number | null }>();
+let time = INTRO_MS;
+let x = PAD_COLS;
+for (const ch of TEXT) {
+  const glyph = GLYPHS[ch];
+  const width = glyph[0].length;
+  for (let c = 0; c < width; c++) {
+    const rows = [...Array(glyph.length).keys()];
+    // Đi từng cột, đổi chiều lên/xuống xen kẽ như đầu bút.
+    for (const r of c % 2 === 0 ? rows : rows.reverse()) {
+      if (glyph[r][c] !== '1') continue;
+      pen.set(`${x + c},${GLYPH_TOP + r}`, { draw: time, sparkle: null });
+      time += STEP_MS;
+    }
+  }
+  if (ch !== ' ') time += PEN_LIFT_MS;
+  x += width + LETTER_GAP;
+}
+const DRAW_END = time + 500;
+[...pen.values()].forEach((v, i) => {
+  if (i % SPARKLE_EVERY === 6) v.sparkle = DRAW_END + ((i * 977) % 7000);
+});
+
+// ---- Lịch: cột cuối chứa hôm nay ----
+const DAY_MS = 86_400_000;
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const todayRow = today.getDay();
+const firstSunday = new Date(today.getTime() - (todayRow + (COLUMNS - 1) * 7) * DAY_MS);
+const dateOf = (col: number, row: number) => new Date(firstSunday.getTime() + (col * 7 + row) * DAY_MS);
+
+// Nhãn tháng: đặt ở cột đầu tiên mà tháng thay đổi (giống GitHub), bỏ nhãn quá sát mép.
+const months: { col: number; label: string }[] = [];
+for (let col = 0; col < COLUMNS; col++) {
+  const m = dateOf(col, 0).getMonth();
+  const prev = col === 0 ? -1 : dateOf(col - 1, 0).getMonth();
+  if (m !== prev && col <= COLUMNS - 3) months.push({ col, label: t.graph.months[m] });
+}
+if (months.length > 1 && months[1].col - months[0].col < 3) months.shift();
+
+// ---- Ô ----
+const hash = (a: number, b: number) => Math.abs(Math.sin(a * 12.9898 + b * 78.233) * 43758.5453) % 1;
+const insideText = (col: number, row: number) =>
+  col >= PAD_COLS && col < PAD_COLS + textWidth && row >= GLYPH_TOP && row < GLYPH_TOP + 5;
+
+function noiseLevel(col: number, row: number): number {
+  const n = hash(col, row);
+  const weekend = row === 0 || row === DAYS - 1;
+  // Trong vùng chữ chỉ để lác đác vài ô nhạt nhất, để chữ đọc rõ.
+  if (insideText(col, row)) return n > 0.9 ? 1 : 0;
+  return n > 0.93 ? 2 : n > (weekend ? 0.8 : 0.62) ? 1 : 0;
+}
+
+const cells: { cls: string; style: string }[] = [];
+for (let col = 0; col < COLUMNS; col++) {
+  for (let row = 0; row < DAYS; row++) {
+    const future = col === COLUMNS - 1 && row > todayRow;
+    const isToday = col === COLUMNS - 1 && row === todayRow;
+    const letter = pen.get(`${col},${row}`);
+    const day = INTRO_MS + col * DAY_SWEEP_MS + Math.round(hash(row, col) * 160);
+
+    if (future) {
+      cells.push({ cls: 'cell future', style: '' });
+    } else if (letter) {
+      const level = hash(col * 3, row) > 0.86 ? 3 : 4;
+      const spark = letter.sparkle === null ? '' : `;--spark:${letter.sparkle}ms`;
+      cells.push({
+        cls: `cell g${level} pen${letter.sparkle === null ? '' : ' sparkle'}`,
+        style: `--draw:${letter.draw}ms${spark}`,
+      });
+    } else {
+      const level = isToday ? 2 : noiseLevel(col, row);
+      const cls = `cell g${level}${level > 0 ? ' commit' : ''}${isToday ? ' today' : ''}`;
+      cells.push({ cls, style: level > 0 ? `--day:${day}ms;--end:${DRAW_END}ms` : '' });
+    }
+  }
+}
+---
+
+<figure class="graph" style={`--cols:${COLUMNS}`} aria-hidden="true">
+  <div class="months">
+    {months.map((m) => <span style={`grid-column:${m.col + 1}`}>{m.label}</span>)}
+  </div>
+  <div class="body">
+    <div class="days">
+      <span></span><span>{t.graph.days[0]}</span><span></span><span>{t.graph.days[1]}</span><span></span><span>{t.graph.days[2]}</span><span></span>
+    </div>
+    <div class="cells">
+      {cells.map((c) => <span class={c.cls} style={c.style}></span>)}
+    </div>
+  </div>
+  <figcaption class="foot">
+    <span>{t.graph.caption}</span>
+    <span class="legend">
+      {t.graph.less}
+      <i class="g0"></i><i class="g1"></i><i class="g2"></i><i class="g3"></i><i class="g4"></i>
+      {t.graph.more}
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .graph {
+    --g0: #ebedf0;
+    /* 5 mức xanh dương đồng bộ với màu nút (#0071e3). */
+    --g1: #c6dffc;
+    --g2: #79b5f7;
+    --g3: #0071e3;
+    --g4: #0050a6;
+    --day-col: 30px;
+    --gap: clamp(2px, 0.35vw, 4px);
+
+    width: min(100% - 24px, 980px);
+    margin: clamp(48px, 7vw, 88px) auto 0;
+    padding: clamp(12px, 2vw, 20px) clamp(12px, 2vw, 20px) clamp(10px, 1.5vw, 16px);
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #fff;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 0;
+    color: #57606a;
+    animation: fade 0.6s var(--ease) both;
+  }
+  .months {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    column-gap: var(--gap);
+    margin-left: var(--day-col);
+    overflow: hidden;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+  .months span { white-space: nowrap; }
+  .body { display: flex; min-width: 0; }
+  .days {
+    flex: 0 0 var(--day-col);
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    row-gap: var(--gap);
+    font-size: 11px;
+  }
+  .days span { display: flex; align-items: center; line-height: 1; }
+  .cells {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-rows: repeat(7, auto);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--gap);
+  }
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    outline: 1px solid rgb(27 31 36 / 0.06);
+    outline-offset: -1px;
+  }
+  .future { visibility: hidden; }
+  .g0 { background: var(--g0); }
+  .g1 { background: var(--g1); }
+  .g2 { background: var(--g2); }
+  .g3 { background: var(--g3); }
+  .g4 { background: var(--g4); }
+
+  /* Ngày có commit: chuyển từ ô trống sang màu của nó khi "thời gian" trôi tới. */
+  .commit { animation: commit 0.5s ease-out backwards; animation-delay: var(--day); }
+  /* Đầu bút: ô trống → xanh sáng, phóng nhẹ → xanh đậm. */
+  .pen { animation: pen 0.55s ease-out backwards; animation-delay: var(--draw); }
+  .sparkle {
+    animation: pen 0.55s ease-out backwards, sparkle 8s ease-in-out infinite;
+    animation-delay: var(--draw), var(--spark);
+  }
+  /* Ô hôm nay: vòng sáng nhẹ sau khi vẽ xong. */
+  .today {
+    animation: commit 0.5s ease-out backwards, today 2.4s ease-in-out infinite;
+    animation-delay: var(--day), var(--end);
+  }
+
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes commit { from { background: var(--g0); } }
+  @keyframes pen {
+    0% { background: var(--g0); transform: scale(1); }
+    30% { background: var(--g1); transform: scale(1.25); box-shadow: 0 0 8px rgb(0 113 227 / 0.6); }
+    60% { background: var(--g2); }
+    100% { transform: scale(1); box-shadow: none; }
+  }
+  @keyframes sparkle {
+    0%, 90%, 100% { filter: none; }
+    94% { filter: brightness(1.9) saturate(1.2); }
+  }
+  @keyframes today {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(0 113 227 / 0); }
+    50% { box-shadow: 0 0 0 3px rgb(0 113 227 / 0.3); }
+  }
+
+  .foot {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+    margin-top: 12px;
+    padding-left: var(--day-col);
+  }
+  .legend { display: inline-flex; align-items: center; gap: 3px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; outline: 1px solid rgb(27 31 36 / 0.06); outline-offset: -1px; }
+  .legend i:first-of-type { margin-left: 4px; }
+  .legend i:last-of-type { margin-right: 4px; }
+
+  @media (max-width: 734px) {
+    .graph { --day-col: 22px; --gap: 1px; width: calc(100% - 16px); padding-inline: 8px; font-size: 10px; }
+    .cell { border-radius: 1px; }
+    .months span:nth-child(even) { visibility: hidden; }
+    .days { font-size: 9px; }
+  }
+</style>

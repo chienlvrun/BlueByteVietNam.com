@@ -1,0 +1,14 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { defaultLocale } from '@/i18n/config';
+---
+
+<BaseLayout lang={defaultLocale}>
+  <section class="section">
+    <div class="container headline">
+      <h2>404</h2>
+      <p>Không tìm thấy trang · Page not found</p>
+      <p><a class="link" href={`/${defaultLocale}/`}><span class="link-copy">BlueByte Vietnam</span></a></p>
+    </div>
+  </section>
+</BaseLayout>

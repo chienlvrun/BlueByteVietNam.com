@@ -1,0 +1,39 @@
+---
+import type { Locale } from '@/i18n/config';
+import { useTranslations } from '@/i18n/utils';
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section id="about" class="section section--dark">
+  <div class="container">
+    <div class="headline">
+      <h2>{t.about.title}</h2>
+      <p>{t.about.text}</p>
+    </div>
+    <dl class="facts">
+      {t.about.facts.map((f) => (
+        <div>
+          <dt>{f.label}</dt>
+          <dd>{f.value}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<style>
+  .headline p { max-width: 38em; }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #424245; }
+  .facts div { display: flex; flex-direction: column-reverse; gap: 6px; padding: 32px 16px 0; text-align: center; }
+  .facts div + div { border-left: 1px solid #424245; }
+  dd { margin: 0; font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.75rem); font-weight: 600; letter-spacing: -0.03em; }
+  dt { font-size: 14px; color: var(--c-muted-dark); }
+  @media (max-width: 734px) {
+    .facts { grid-template-columns: 1fr 1fr; }
+    .facts div:nth-child(3) { border-left: 0; }
+    .facts div:nth-child(n + 3) { margin-top: 32px; }
+  }
+</style>

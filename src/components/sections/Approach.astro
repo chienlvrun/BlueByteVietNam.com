@@ -1,0 +1,39 @@
+---
+import type { Locale } from '@/i18n/config';
+import { useTranslations } from '@/i18n/utils';
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section id="approach" class="section">
+  <div class="container">
+    <div class="headline">
+      <h2>{t.approach.title}</h2>
+      <p>{t.approach.text}</p>
+    </div>
+    <ol class="cards" role="list">
+      {t.approach.items.map((item, i) => (
+        <li>
+          <span class="num">{String(i + 1).padStart(2, '0')}</span>
+          <h3>{item.title}</h3>
+          <p>{item.text}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  li { padding: clamp(28px, 4vw, 44px); background: var(--c-bg-alt); border-radius: var(--radius-tile); }
+  .num {
+    font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1;
+    background: linear-gradient(135deg, #0071e3, #42a1ff 60%, #8e8e93);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h3 { font-size: clamp(1.4rem, 1.2rem + 0.6vw, 1.75rem); margin-top: 20px; }
+  p { color: var(--c-muted); margin-top: 10px; }
+  @media (max-width: 734px) { .cards { grid-template-columns: 1fr; } }
+</style>
