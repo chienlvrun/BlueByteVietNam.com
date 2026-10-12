@@ -1,12 +1,8 @@
 ---
-import type { Locale } from '@/i18n/config';
-import { pick, useTranslations } from '@/i18n/utils';
+import { t } from '@/content';
 import { company } from '@/data/site';
 import { products } from '@/data/products';
 
-interface Props { lang: Locale }
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 ---
 
 <footer class="footer">
@@ -30,7 +26,7 @@ const t = useTranslations(lang);
     </div>
 
     <div class="legal">
-      <p class="legal-name">{pick(company.legalName, lang)} ({company.shortName})</p>
+      <p class="legal-name">{company.legalName} ({company.shortName})</p>
       <p>{t.footer.taxCode}: {company.taxCode} <span aria-hidden="true">|</span> {t.footer.representative}: {company.representative}</p>
       <p>{t.footer.address}: {company.address}</p>
     </div>

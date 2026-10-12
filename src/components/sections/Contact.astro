@@ -1,11 +1,7 @@
 ---
-import type { Locale } from '@/i18n/config';
-import { useTranslations } from '@/i18n/utils';
+import { t } from '@/content';
 import { company } from '@/data/site';
 
-interface Props { lang: Locale }
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 ---
 
 <section id="contact" class="section">

@@ -1,11 +1,7 @@
 ---
-import type { Locale } from '@/i18n/config';
-import { useTranslations } from '@/i18n/utils';
+import { t } from '@/content';
 import ContributionGraph from './ContributionGraph.astro';
 
-interface Props { lang: Locale }
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 ---
 
 <section class="hero">
@@ -18,7 +14,7 @@ const t = useTranslations(lang);
       <a class="button button-elevated button-secondary" href="#contact">{t.hero.secondary}</a>
     </div>
   </div>
-  <ContributionGraph lang={lang} />
+  <ContributionGraph />
 </section>
 
 <style>

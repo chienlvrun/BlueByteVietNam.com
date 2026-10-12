@@ -1,12 +1,7 @@
-import type { Localized } from '@/i18n/config';
-
 // Thông tin pháp lý — nguồn: đăng ký doanh nghiệp (masothue.com, MST 0110976901).
 export const company = {
   name: 'BlueByte Vietnam',
-  legalName: {
-    vi: 'Công ty Cổ phần Công nghệ BlueByte Việt Nam',
-    en: 'BlueByte Vietnam Technology Joint Stock Company',
-  } satisfies Localized,
+  legalName: 'BlueByte Vietnam Technology Joint Stock Company',
   shortName: 'BLUEBYTE VN JSC',
   taxCode: '0110976901',
   founded: '2025',

@@ -1,6 +1,5 @@
-import type vi from './vi';
-
-const en: typeof vi = {
+// Toàn bộ chữ hiển thị trên trang.
+export const t = {
   meta: {
     title: 'BlueByte Vietnam — Making useful products',
     description: 'BlueByte Vietnam is a Vietnamese startup making useful, simple and accessible products for everyone — with technology and AI.',
@@ -73,5 +72,3 @@ const en: typeof vi = {
     rights: 'All rights reserved.',
   },
 };
-
-export default en;

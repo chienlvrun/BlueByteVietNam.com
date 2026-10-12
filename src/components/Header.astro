@@ -1,16 +1,11 @@
 ---
-import { locales, localeLabels, type Locale } from '@/i18n/config';
-import { useTranslations } from '@/i18n/utils';
+import { t } from '@/content';
 import Logo from './Logo.astro';
-
-interface Props { lang: Locale }
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 ---
 
 <header class="header">
   <div class="container--wide bar">
-    <Logo href={`/${lang}/`} />
+    <Logo href="/" />
 
     <nav class="nav" aria-label="Main">
       <a href="#products">{t.nav.products}</a>
@@ -18,12 +13,6 @@ const t = useTranslations(lang);
       <a href="#about">{t.nav.about}</a>
       <a href="#contact">{t.nav.contact}</a>
     </nav>
-
-    <div class="lang">
-      {locales.map((l) => (
-        <a href={`/${l}/`} hreflang={l} aria-current={l === lang ? 'true' : undefined}>{localeLabels[l]}</a>
-      ))}
-    </div>
   </div>
 </header>
 
@@ -40,8 +29,5 @@ const t = useTranslations(lang);
   .nav { display: flex; gap: clamp(20px, 3vw, 40px); font-size: 12px; letter-spacing: -0.01em; }
   .nav a { color: rgb(0 0 0 / 0.8); transition: color 0.32s cubic-bezier(0.4, 0, 0.6, 1); }
   .nav a:hover { color: #000; }
-  .lang { display: flex; gap: 10px; font-size: 12px; }
-  .lang a { color: var(--c-muted); }
-  .lang a[aria-current] { color: var(--c-text); font-weight: 600; }
   @media (max-width: 734px) { .nav { display: none; } }
 </style>

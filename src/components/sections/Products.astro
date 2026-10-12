@@ -1,11 +1,7 @@
 ---
-import type { Locale } from '@/i18n/config';
-import { pick, useTranslations } from '@/i18n/utils';
+import { t } from '@/content';
 import { products } from '@/data/products';
 
-interface Props { lang: Locale }
-const { lang } = Astro.props;
-const t = useTranslations(lang);
 
 // Ô 5x5 cho thẻ "Sản phẩm tiếp theo": một ô xanh đang "sáng lên".
 const NEXT_GRID = 25;
@@ -26,8 +22,8 @@ const NEXT_LIT = 18;
         <div class="tile-copy">
           <p class="status">{t.products.live}</p>
           <h3>{p.name}</h3>
-          <p class="tagline">{pick(p.tagline, lang)}</p>
-          <p class="desc">{pick(p.description, lang)}</p>
+          <p class="tagline">{p.tagline}</p>
+          <p class="desc">{p.description}</p>
           <div class="cta-row">
             <a class="button button-elevated" href={p.url} target="_blank" rel="noopener">{t.products.try}</a>
             <a class="button button-elevated button-secondary" href={p.url} target="_blank" rel="noopener">{p.domain}</a>
@@ -37,7 +33,7 @@ const NEXT_LIT = 18;
           {[72, 90, 55, 84, 40].map((w, i) => (
             <span class:list={['line', { speaker: i === 0 || i === 3 }]} style={`--w:${w}%; --i:${i}`}></span>
           ))}
-          <p class="meta">{pick(p.tags, lang).join(' · ')}</p>
+          <p class="meta">{p.tags.join(' · ')}</p>
         </div>
       </article>
     ))}
